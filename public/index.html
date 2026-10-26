@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0a0d12" />
+    <title>FIRE ARENA · 3D 网页枪战</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0d12'/%3E%3Cpath d='M32 8l7 15 17 2-12 12 3 17-15-8-15 8 3-17L8 25l17-2z' fill='%23ff6b2c'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "/vendor/three/build/three.module.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="app">
+      <!-- ----------------------------- Login ----------------------------- -->
+      <section id="screen-login" class="screen active">
+        <div class="login-bg">
+          <div class="scanlines"></div>
+        </div>
+        <div class="login-card">
+          <div class="brand">FIRE<span>ARENA</span></div>
+          <p class="tagline">3D 网页枪战 · 1v1 对决</p>
+          <form id="login-form" autocomplete="off">
+            <label for="nickname">战场代号</label>
+            <input
+              id="nickname"
+              name="nickname"
+              maxlength="16"
+              minlength="2"
+              placeholder="输入 2-16 个字符"
+              autocomplete="off"
+              spellcheck="false"
+              required
+            />
+            <button type="submit" class="btn primary big">进入战场</button>
+          </form>
+          <p id="login-error" class="error"></p>
+          <p class="hint">无需密码，昵称即身份。请使用 Chrome / Edge 桌面浏览器，需要键盘与鼠标。</p>
+        </div>
+        <div class="login-footer">WASD 移动 · 鼠标瞄准 · 左键射击 · 右键机瞄 · R 换弹</div>
+      </section>
+
+      <!-- ----------------------------- Lobby ----------------------------- -->
+      <section id="screen-lobby" class="screen">
+        <header class="topbar">
+          <div class="brand small">FIRE<span>ARENA</span></div>
+          <div class="user-chip">
+            <span class="status-dot"></span>
+            <span id="lobby-name">--</span>
+          </div>
+          <div class="topbar-actions">
+            <span id="lobby-net" class="net-state">连接中…</span>
+            <button id="btn-logout" class="btn ghost small">退出</button>
+          </div>
+        </header>
+
+        <main class="lobby-grid">
+          <div class="panel play-panel">
+            <h2>开始对战</h2>
+            <button id="btn-quick" class="btn primary big">快速匹配</button>
+            <p id="queue-status" class="muted"></p>
+
+            <div class="divider"><span>或者和朋友开房</span></div>
+
+            <div class="room-actions">
+              <button id="btn-create" class="btn wide">创建房间</button>
+              <div class="join-row">
+                <input
+                  id="room-code-input"
+                  maxlength="4"
+                  placeholder="房间码"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+                <button id="btn-join" class="btn">加入</button>
+              </div>
+            </div>
+
+            <p id="lobby-message" class="message"></p>
+
+            <div id="room-panel" class="room-panel hidden">
+              <div class="room-code-label">房间码</div>
+              <div class="room-code-row">
+                <strong id="room-code">----</strong>
+                <button id="btn-copy-code" class="btn ghost small">复制</button>
+              </div>
+              <div id="room-state" class="muted">等待对手加入…</div>
+              <button id="btn-leave-room" class="btn danger small">离开房间</button>
+            </div>
+
+            <div class="queue-panel hidden" id="queue-panel">
+              <div class="spinner"></div>
+              <div>
+                <strong>正在匹配对手…</strong>
+                <p class="muted">找到对手后将自动开局</p>
+              </div>
+              <button id="btn-cancel-queue" class="btn ghost small">取消</button>
+            </div>
+          </div>
+
+          <div class="panel stats-panel">
+            <h2>我的战绩</h2>
+            <div class="stat-grid">
+              <div><span id="stat-wins">0</span><label>胜场</label></div>
+              <div><span id="stat-losses">0</span><label>负场</label></div>
+              <div><span id="stat-kd">0</span><label>K/D</label></div>
+              <div><span id="stat-kills">0</span><label>击杀</label></div>
+            </div>
+            <div class="stat-meta">
+              <span>总场次 <b id="stat-matches">0</b></span>
+              <span>爆头 <b id="stat-headshots">0</b></span>
+            </div>
+          </div>
+
+          <div class="panel leaderboard-panel">
+            <h2>排行榜 <span class="muted small">按胜场</span></h2>
+            <table id="leaderboard">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>玩家</th>
+                  <th>胜</th>
+                  <th>击杀</th>
+                  <th>K/D</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="panel help-panel">
+            <h2>作战手册</h2>
+            <ul class="key-list">
+              <li><kbd>W A S D</kbd><span>移动</span></li>
+              <li><kbd>鼠标</kbd><span>瞄准</span></li>
+              <li><kbd>左键</kbd><span>射击</span></li>
+              <li><kbd>右键</kbd><span>机瞄</span></li>
+              <li><kbd>Shift</kbd><span>冲刺</span></li>
+              <li><kbd>Space</kbd><span>跳跃</span></li>
+              <li><kbd>R</kbd><span>换弹</span></li>
+              <li><kbd>Tab</kbd><span>计分板</span></li>
+              <li><kbd>Esc</kbd><span>释放鼠标</span></li>
+            </ul>
+            <p class="muted small">规则：先到 10 杀或 5 分钟内击杀更多者获胜。阵亡 3 秒后重生。</p>
+          </div>
+        </main>
+      </section>
+
+      <!-- ------------------------------ Game ------------------------------ -->
+      <section id="screen-game" class="screen">
+        <canvas id="game-canvas"></canvas>
+
+        <div id="hud">
+          <div id="scorebar" class="hud-block">
+            <div class="score-side">
+              <span id="score-us">0</span><label>你</label>
+            </div>
+            <div class="score-center">
+              <div id="timer">5:00</div>
+              <div class="score-rule">先到 10 杀</div>
+            </div>
+            <div class="score-side enemy">
+              <span id="score-them">0</span><label id="enemy-name">对手</label>
+            </div>
+          </div>
+
+          <div id="room-badge" class="hud-chip">房间 ----</div>
+          <div id="killfeed"></div>
+          <div id="center-message"></div>
+
+          <div id="crosshair">
+            <span class="ch-line top"></span>
+            <span class="ch-line right"></span>
+            <span class="ch-line bottom"></span>
+            <span class="ch-line left"></span>
+            <span class="ch-dot"></span>
+          </div>
+          <div id="hitmarker">✕</div>
+          <div id="damage-vignette"></div>
+
+          <div id="health-panel" class="hud-block">
+            <div class="hp-top">
+              <span class="hp-label">HP</span>
+              <span id="hp-value">100</span>
+            </div>
+            <div class="hp-bar"><div id="hp-bar-fill"></div></div>
+            <div id="protect-label" class="protect-label hidden">出生保护</div>
+          </div>
+
+          <div id="ammo-panel" class="hud-block">
+            <div class="weapon-name" id="weapon-name">AR-15</div>
+            <div class="ammo-line">
+              <span id="ammo-value">30</span>
+              <span class="ammo-max">/ 30</span>
+            </div>
+            <div id="reload-label" class="reload-label hidden">换弹中…</div>
+          </div>
+
+          <div id="players-count" class="hud-chip right">1v1</div>
+
+          <div id="scoreboard" class="hidden">
+            <h3>对局数据</h3>
+            <table>
+              <thead>
+                <tr><th>玩家</th><th>击杀</th><th>死亡</th><th>状态</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="game-overlay" class="overlay">
+          <div class="overlay-card">
+            <div class="overlay-kicker">鼠标锁定</div>
+            <h2 id="overlay-title">点击进入战场</h2>
+            <p id="overlay-text">点击后锁定鼠标，Esc 可随时释放</p>
+            <button id="overlay-btn" class="btn primary">点击开始</button>
+            <button id="overlay-leave" class="btn ghost small overlay-leave">退出对局</button>
+          </div>
+        </div>
+
+        <div id="countdown-overlay" class="overlay hidden no-pointer">
+          <div class="countdown-box">
+            <div id="countdown-number">3</div>
+            <div class="countdown-label">准备战斗</div>
+          </div>
+        </div>
+
+        <div id="result-overlay" class="overlay hidden">
+          <div class="overlay-card result-card">
+            <div id="result-kicker" class="overlay-kicker">对局结束</div>
+            <h2 id="result-title">胜利</h2>
+            <div id="result-score" class="result-score"></div>
+            <table id="result-table">
+              <thead>
+                <tr><th>玩家</th><th>击杀</th><th>死亡</th><th>爆头</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+            <button id="result-btn" class="btn primary">返回大厅</button>
+          </div>
+        </div>
+
+        <div id="disconnect-overlay" class="overlay hidden no-pointer">
+          <div class="overlay-card">
+            <div class="spinner"></div>
+            <h2>连接中断</h2>
+            <p>正在尝试重连，请稍候…</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <script type="module" src="/js/main.js"></script>
+  </body>
+</html>

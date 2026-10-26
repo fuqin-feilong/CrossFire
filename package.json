@@ -1,0 +1,19 @@
+{
+  "name": "fire-arena",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A simple 3D web FPS duel arena",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "three": "^0.180.0",
+    "ws": "^8.18.0"
+  }
+}

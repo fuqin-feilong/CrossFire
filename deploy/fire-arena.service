@@ -1,0 +1,30 @@
+# /etc/systemd/system/fire-arena.service
+# 复制后按实际路径/用户名修改，然后：
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now fire-arena
+
+[Unit]
+Description=FIRE ARENA - 3D web FPS
+After=network.target
+
+[Service]
+Type=simple
+User=firearena
+Group=firearena
+WorkingDirectory=/opt/fire-arena
+
+Environment=NODE_ENV=production
+Environment=PORT=3000
+# 放在 Nginx/Caddy 后面时只监听本机，避免 3000 直接暴露公网
+Environment=HOST=127.0.0.1
+
+ExecStart=/usr/bin/node server/index.js
+Restart=always
+RestartSec=3
+
+# 基础加固
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

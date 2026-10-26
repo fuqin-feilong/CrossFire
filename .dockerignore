@@ -1,0 +1,14 @@
+node_modules
+data
+npm-debug.log*
+*.log
+*.err
+.git
+.gitignore
+tmp-*
+deploy
+Dockerfile
+compose.yaml
+README.md
+start.bat
+stop.bat
